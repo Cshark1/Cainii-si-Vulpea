@@ -5,8 +5,9 @@
 #include "GameManager.h"
 #include "Utils.h"
 #include "CLI.h"
-#include <vector>
+#include "GUI.h"
 
+#include <vector>
 #include <iostream>
 
 GameManager::GameManager(Utils::mode mode) {
@@ -20,7 +21,7 @@ GameManager::GameManager(Utils::mode mode) {
     if (mode == Utils::CLI){
         GameManager::ui = new CLI();
     } else {
-        //Initialize GUI
+        GameManager::ui = new GUI(800, 600, "Cainii si Vulpea");
     }
 
     gameLoop();
@@ -168,27 +169,38 @@ void GameManager::handleMenuOption(Utils::menuOptions menuOption) {
 
 
 [[noreturn]] void GameManager::gameLoop() {
-    if (mode == Utils::CLI) {
-        while (true) {
-            if (isGameRunning()) {
-                ui->printPlayerTurn(isDogTurn);
-                ui->printBoard(board);
-                if (!movePiece(ui->readMove())) {
-                    ui->printError("Invalid move!");
-                } else {
-                    Utils::winner winner = checkForWinner();
-                    if (winner != Utils::NoOne) {
-                        ui->printWinner(winner);
-                        isGameStarted = false;
-                    }
-                }
-            } else {
-                ui->printMainMenu();
-                handleMenuOption(ui->readMenuOption());
+
+    while (true) {
+        ui->printPlayerTurn(isDogTurn);
+        ui->printBoard(board);
+        ui->printMoveHistory(dogs_move, fox_move);
+        if (!movePiece(ui->readMove())) {
+            ui->printError("Invalid move!");
+        } else {
+            Utils::winner winner = checkForWinner();
+            if (winner != Utils::NoOne) {
+                ui->printWinner(winner);
+                isGameStarted = false;
             }
         }
-    } else if (mode == Utils::GUI) {
-
     }
+//        if (isGameRunning()) {
+//            ui->printPlayerTurn(isDogTurn);
+//            ui->printBoard(board);
+//            ui->printMoveHistory(dogs_move, fox_move);
+//            if (!movePiece(ui->readMove())) {
+//                ui->printError("Invalid move!");
+//            } else {
+//                Utils::winner winner = checkForWinner();
+//                if (winner != Utils::NoOne) {
+//                    ui->printWinner(winner);
+//                    isGameStarted = false;
+//                }
+//            }
+//        } else {
+//            ui->printMainMenu();
+//            handleMenuOption(ui->readMenuOption());
+//        }
+//    }
 }
 

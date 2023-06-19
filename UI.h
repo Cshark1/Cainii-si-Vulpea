@@ -6,6 +6,7 @@
 #define UNTITLED4_UI_H
 
 #include <string>
+#include <vector>
 
 #include "Utils.h"
 #include "Board.h"
@@ -21,6 +22,7 @@ public:
     virtual void printError(std::string error) = 0;
     virtual void printPlayerTurn(bool isDogTurn) = 0;
     virtual void printWinner(Utils::winner winner) = 0;
+    virtual void printMoveHistory(const std::vector<Utils::Move> &dogs_move, const std::vector<Utils::Move> &fox_move) {};
 };
 
 #endif //UNTITLED4_UI_H

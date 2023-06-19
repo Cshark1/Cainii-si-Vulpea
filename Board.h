@@ -8,7 +8,7 @@
 
 class Board {
 private:
-    char board[8][8]={'e', 'e', 'e', 'e', 'f', 'e', 'e', 'e',
+    char board[8][8]={'e', 'e', 'e', 'f', 'e', 'e', 'e', 'e',
                       'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e',
                       'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e',
                       'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e',

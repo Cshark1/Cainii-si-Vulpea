@@ -10,6 +10,7 @@
 #include "Board.h"
 #include "Utils.h"
 #include "CLI.h"
+#include "GUI.h"
 
 class UI;
 
@@ -26,6 +27,9 @@ private:
 
     Utils::winner checkForWinner();
     std::vector<Utils::directions> getDirections(int pieceLine, int pieceColumn);
+
+    std::vector<Utils::Move> dogs_move;
+    std::vector<Utils::Move> fox_move;
 
     bool isMoveValid(int initialLine, int initialColumn, int finalLine, int finalColumn);
     void handleMenuOption(Utils::menuOptions);

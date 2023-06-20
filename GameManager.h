@@ -40,6 +40,7 @@ public:
     explicit GameManager(Utils::mode mode = Utils::GUI);
     int getWidth();
     int getHeight();
+    Board getBoard();
     bool isGameRunning();
     char getBoardValue(int line, int column);
     bool movePiece(Utils::Move move);

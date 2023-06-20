@@ -5,17 +5,28 @@
 #include <string>
 #include <winbgim.h>
 #include <iostream>
+#include <algorithm>
+#include <chrono>
 
 #include "GUI.h"
+#include "GameManager.h"
 
 #define BOARDGREEN COLOR(70, 130, 100)
 #define BOARDWHITE COLOR(255, 255, 255)
+#define BOARDACCENT COLOR(107,135,76)
+#define TEXTBLACK COLOR(0, 0, 0)
 
-GUI::GUI(int width, int height, std::string title) {
+
+GUI::GUI(int width, int height, std::string title, GameManager &gm) {
     GUI::width = width;
     GUI::height = height;
+    GUI::gm = &gm;
     boardSize = height - 40;
+    rightSideWidth = width - boardSize - 60;
+    rightSizeStartWidth = boardSize + 60;
+    nextLine = 20;
     initwindow(width, height, title.c_str());
+    determineFontSizeForScreenSize();
     setbkcolor(COLOR(255, 255, 255));
     cleardevice();
     setactivepage(2);
@@ -39,10 +50,9 @@ void GUI::drawFilledRectangle(int topLeftX, int topLeftY, int bottomRightX, int 
 
 
 void GUI::drawBoard(Board board) {
-    boardSize;
     int squareSize = boardSize / 8;
 
-    setcolor(BOARDGREEN);
+    setcolor(BOARDACCENT);
     drawFilledRectangle(18, 18, 22 + boardSize, 22 + boardSize);
 
     for (int i = 0; i < 8; ++i) {
@@ -59,18 +69,38 @@ void GUI::drawBoard(Board board) {
             if (board.getBoardValue(i, j) == 'f'){
                 readimagefile( "fox.gif", (j * squareSize) + 30, (i * squareSize) + 30, ((j + 1) * squareSize) + 10,
                                ((i + 1) * squareSize) + 10);
-                std::cout << "Left: " << (j * squareSize) + 20 << std::endl;
-                std::cout << "Top: " << (i * squareSize) + 20 << std::endl;
-                std::cout << "Right: " << ((j + 1) * squareSize) + 20 << std::endl;
-                std::cout << "Bottom: " << ((i + 1) * squareSize) + 600 << std::endl;
             }
-
         }
     }
 }
 
 Utils::Move GUI::readMove() {
-    return Utils::Move();
+    Utils::Move move{};
+    int reads = 0;
+    while (reads < 2){
+        if (ismouseclick(WM_LBUTTONDOWN)){
+            clearmouseclick(WM_LBUTTONDOWN);
+            int x = mousex();
+            int y = mousey();
+            int squareSize = boardSize / 8;
+            if ((x - 20) / squareSize > 8 || (y - 20) / squareSize > 8)
+                continue;
+            if (reads == 0){
+                if ((gm->getBoardValue((y - 20) / squareSize, (x - 20) / squareSize) == 'd' && isDogTurn) ||
+                    gm->getBoardValue((y - 20) / squareSize, (x - 20) / squareSize) == 'f' && !isDogTurn) {
+                    move.pieceLine = (y - 20) / squareSize;
+                    move.pieceColumn = (x - 20) / squareSize;
+                } else {
+                    continue;
+                }
+            } else{
+                move.moveLine = (y - 20) / squareSize;
+                move.moveColumn = (x - 20) / squareSize;
+            }
+            ++reads;
+        }
+    }
+    return move;
 }
 
 Utils::menuOptions GUI::readMenuOption() {
@@ -86,13 +116,16 @@ void GUI::printBoard(Board board) {
 }
 
 void GUI::printError(std::string error) {
-
+    printPopUp("TEST");
 }
 
 void GUI::printPlayerTurn(bool isDogTurn) {
     setbkcolor(COLOR(255, 255, 255));
     cleardevice();
 
+    GUI::isDogTurn = isDogTurn;
+
+    drawPlayerTurn();
 
 }
 
@@ -101,8 +134,77 @@ void GUI::printWinner(Utils::winner winner) {
 }
 
 void GUI::printMoveHistory(const std::vector<Utils::Move> &dogs_move, const std::vector<Utils::Move> &fox_move) {
-    swapbuffers();
-    UI::printMoveHistory(dogs_move, fox_move);
+    int active_buffer = getactivepage();
+    setactivepage(getvisualpage());
+    setvisualpage(active_buffer);
 }
+
+void GUI::determineFontSizeForScreenSize() {
+    int size = 120;
+    while (size > 6){
+        settextstyle(DEFAULT_FONT, HORIZ_DIR, size);
+        if ((textwidth("Now:") + 90) <= rightSideWidth)
+            break;
+        size -= 2;
+    }
+}
+
+void GUI::printPopUp(std::string message) {
+    int prev_active_page = getactivepage();
+    int prev_visual_page = getvisualpage();
+    setactivepage(3);
+    setbkcolor(COLOR(255, 255, 255));
+    cleardevice();
+    drawBoard(gm->getBoard());
+    drawPlayerTurn();
+    setcolor(BOARDACCENT);
+    char str[255];
+    strcpy(str, message.c_str());
+    drawFilledRectangle(0,(height / 2) - (textheight(str) / 2) - 20,width,(height / 2) + (textheight(str) / 2) + 20);
+    setbkcolor(BOARDACCENT);
+    setcolor(BLACK);
+    outtextxy(width / 2 - textwidth(str) / 2, (height / 2) - (textheight(str) / 2), str);
+    setvisualpage(3);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    clearmouseclick(WM_LBUTTONDOWN);
+
+    do {
+        end = std::chrono::steady_clock::now();
+    } while (!ismouseclick(WM_LBUTTONDOWN) && std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() < 5);
+
+    clearmouseclick(WM_LBUTTONDOWN);
+
+    setactivepage(prev_active_page);
+    setvisualpage(prev_visual_page);
+}
+
+
+void GUI::drawPlayerTurn() {
+    setcolor(TEXTBLACK);
+
+    int iconSize = std::max(textheight("Now:"), 60);
+    if (iconSize > 60) {
+        outtextxy(rightSizeStartWidth, nextLine, "Now: ");
+        if (isDogTurn){
+            readimagefile("dog.gif", rightSizeStartWidth + textwidth("Now:") + 10, nextLine,
+                          rightSizeStartWidth + textwidth("Now:") + 10 + iconSize, nextLine + iconSize);
+        } else {
+            readimagefile("fox.gif", rightSizeStartWidth + textwidth("Now:") + 10, nextLine,
+                          rightSizeStartWidth + textwidth("Now:") + 70, nextLine + 60);
+        }
+    } else {
+        outtextxy(rightSizeStartWidth, nextLine + (60 - textheight("Now:")) / 2, "Now: ");
+        if (isDogTurn){
+            readimagefile("dog.gif", rightSizeStartWidth + textwidth("Now:") + 10, nextLine,
+                          rightSizeStartWidth + textwidth("Now:") + 70, nextLine + 60);
+        } else {
+            readimagefile("fox.gif", rightSizeStartWidth + textwidth("Now:") + 10, nextLine,
+                          rightSizeStartWidth + textwidth("Now:") + 70, nextLine + 60);
+        }
+    }
+}
+
 
 

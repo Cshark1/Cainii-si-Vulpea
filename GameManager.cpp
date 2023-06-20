@@ -21,7 +21,7 @@ GameManager::GameManager(Utils::mode mode) {
     if (mode == Utils::CLI){
         GameManager::ui = new CLI();
     } else {
-        GameManager::ui = new GUI(800, 600, "Cainii si Vulpea");
+        GameManager::ui = new GUI(width, height, "Cainii si Vulpea", *this);
     }
 
     gameLoop();
@@ -174,6 +174,7 @@ void GameManager::handleMenuOption(Utils::menuOptions menuOption) {
         ui->printPlayerTurn(isDogTurn);
         ui->printBoard(board);
         ui->printMoveHistory(dogs_move, fox_move);
+
         if (!movePiece(ui->readMove())) {
             ui->printError("Invalid move!");
         } else {
@@ -202,5 +203,9 @@ void GameManager::handleMenuOption(Utils::menuOptions menuOption) {
 //            handleMenuOption(ui->readMenuOption());
 //        }
 //    }
+}
+
+Board GameManager::getBoard() {
+    return board;
 }
 
